@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhi NCR Construction Tracking Dashboard</title>
+    <script src="https://unpkg.com/osmtogeojson@3.0.0-beta.4/osmtogeojson.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+
+        :root {
+            --sidebar-w: 340px;
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #1c2330;
+            --border: #30363d;
+            --border-soft: #21262d;
+            --text: #e6edf3;
+            --text-muted: #7d8590;
+            --text-dim: #484f58;
+            --accent: #2f81f7;
+            --accent-glow: rgba(47,129,247,0.18);
+            --green: #3fb950;
+            --red: #f85149;
+            --yellow: #d29922;
+            --bldg: #f0527a;
+            --road: #58a6ff;
+            --land: #ffa657;
+            --local: #a371f7;
+            --heat: #ff6b00;
+            --heat-bg: rgba(255,107,0,0.12);
+            --change: #3fb950;
+            --change-bg: rgba(63,185,80,0.10);
+            --local-bg: rgba(163,113,247,0.12);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            display: flex; height: 100vh; overflow: hidden;
+            font-family: 'Syne', system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+        }
+
+        /* ══ SIDEBAR ══ */
+        #sidebar {
+            width: var(--sidebar-w); min-width: var(--sidebar-w);
+            background: var(--surface);
+            display: flex; flex-direction: column;
+            border-right: 1px solid var(--border);
+            z-index: 20; overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 18px 20px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(160deg, #161b22 0%, #0d1117 100%);
+            flex-shrink: 0;
+        }
+
+        .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+
+        .header-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--accent), #79c0ff);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+
+        .header-title { font-size: 1.05rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+        .header-sub { font-size: 0.7rem; color: var(--text-muted); font-weight: 400; letter-spacing: 1.2px; text-transform: uppercase; margin-top: 1px; }
+
+        .sidebar-scroll {
+            flex: 1; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 0;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .section { padding: 16px 18px; border-bottom: 1px solid var(--border-soft); }
+
+        #status-indicator {
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 13px; border-radius: var(--radius);
+            background: var(--surface2); border: 1px solid var(--border);
+            font-size: 0.78rem; font-weight: 500;
+            font-family: 'DM Mono', monospace; color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--text-dim); flex-shrink: 0; transition: background 0.3s;
+        }
+
+        .sec-label {
+            font-size: 0.68rem; font-weight: 700; color: var(--text-dim);
+            text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px;
+        }
+
+        .search-wrap { position: relative; }
+
+        #search-input {
+            width: 100%; padding: 9px 36px 9px 12px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--radius); font-size: 0.85rem;
+            font-family: 'Syne', sans-serif; color: var(--text);
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #search-input::placeholder { color: var(--text-dim); }
+        #search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+        .search-icon {
+            position: absolute; right: 10px; top: 50%;
+            transform: translateY(-50%); color: var(--text-dim);
+            font-size: 0.85rem; pointer-events: none;
+        }
+
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 7px;
+            width: 100%; padding: 9px 14px; border: none;
+            border-radius: var(--radius); font-size: 0.83rem; font-weight: 600;
+            font-family: 'Syne', sans-serif; cursor: pointer;
+            transition: all 0.2s ease; letter-spacing: 0.1px;
+        }
+        .btn + .btn { margin-top: 8px; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: #388bfd; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(47,129,247,0.35); }
+        .btn-dark { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+        .btn-dark:hover { background: #2d333b; border-color: var(--text-muted); }
+        .btn-danger { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); animation: pulse-red 1.8s infinite; }
+        .btn-purple { background: rgba(163,113,247,0.15); color: var(--local); border: 1px solid rgba(163,113,247,0.3); }
+        .btn-purple:hover { background: rgba(163,113,247,0.25); }
+        .btn-heat { background: var(--heat-bg); color: var(--heat); border: 1px solid rgba(255,107,0,0.3); }
+        .btn-heat:hover { background: rgba(255,107,0,0.22); }
+        .btn-change { background: var(--change-bg); color: var(--change); border: 1px solid rgba(63,185,80,0.3); }
+        .btn-change:hover { background: rgba(63,185,80,0.18); }
+        .btn-change.active { background: rgba(63,185,80,0.25); border-color: var(--change); box-shadow: 0 0 0 2px rgba(63,185,80,0.2); }
+        .btn-heat.active   { background: rgba(255,107,0,0.25);  border-color: var(--heat); box-shadow: 0 0 0 2px rgba(255,107,0,0.2); }
+
+        @keyframes pulse-red { 0%,100% { box-shadow: 0 0 0 0 rgba(248,81,73,0.3); } 50% { box-shadow: 0 0 0 5px rgba(248,81,73,0); } }
+
+        /* Date range inputs */
+        .date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+        .date-group label { font-size: 0.63rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 3px; }
+        .date-group input[type="date"] {
+            width: 100%; padding: 6px 8px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--radius); font-size: 0.72rem;
+            font-family: 'DM Mono', monospace; color: var(--text);
+            outline: none; transition: border-color 0.2s;
+            color-scheme: dark;
+        }
+        .date-group input[type="date"]:focus { border-color: var(--accent); }
+
+        /* Slider */
+        .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .slider-row label { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; }
+        .slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+        .slider-val { font-size: 0.72rem; font-family: 'DM Mono', monospace; color: var(--text-muted); min-width: 28px; text-align: right; }
+
+        /* Stats cards */
+        .stats-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+        .stat-box {
+            background: var(--surface2); border: 1px solid var(--border-soft);
+            border-radius: var(--radius); padding: 8px 10px; text-align: center;
+        }
+        .stat-val { font-size: 1.1rem; font-weight: 800; font-family: 'DM Mono', monospace; }
+        .stat-key { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 1px; }
+
+        /* Change stats (4-column) */
+        .stats-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+
+        /* Layer legend */
+        .legend-strip { margin-top: 10px; }
+        .legend-item { display: flex; align-items: center; gap: 7px; padding: 4px 0; font-size: 0.76rem; color: var(--text-muted); }
+        .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+        .legend-bar {
+            flex: 1; height: 8px; border-radius: 4px;
+            background: linear-gradient(to right, #ffffb2, #fecc5c, #fd8d3c, #f03b20, #bd0026);
+        }
+        .legend-bar-heat {
+            flex: 1; height: 8px; border-radius: 4px;
+            background: linear-gradient(to right, #000000, #ff6b00, #ff2200, #8b0000);
+        }
+        .legend-ends { display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--text-dim); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+        /* File upload */
+        .upload-area {
+            border: 2px dashed var(--border); border-radius: var(--radius);
+            padding: 14px 12px; text-align: center; cursor: pointer;
+            transition: all 0.2s ease; background: var(--surface2); position: relative;
+        }
+        .upload-area:hover { border-color: var(--local); background: rgba(163,113,247,0.06); }
+        .upload-area.has-file { border-color: var(--local); border-style: solid; background: rgba(163,113,247,0.08); }
+        .upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .upload-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+        .upload-text { font-size: 0.78rem; color: var(--text-muted); }
+        .upload-text strong { color: var(--local); display: block; font-size: 0.72rem; margin-top: 2px; }
+        .upload-hint { font-size: 0.68rem; color: var(--text-dim); margin-top: 6px; text-align: center; }
+
+        .or-divider { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 0.7rem; color: var(--text-dim); }
+        .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-soft); }
+
+        .url-row { display: flex; gap: 6px; }
+        #geojson-url {
+            flex: 1; padding: 8px 10px; background: var(--surface2);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            font-size: 0.78rem; font-family: 'DM Mono', monospace; color: var(--text);
+            outline: none; transition: border-color 0.2s;
+        }
+        #geojson-url::placeholder { color: var(--text-dim); }
+        .btn-url { width: auto; padding: 8px 12px; flex-shrink: 0; font-size: 0.75rem; }
+
+        .filter-row { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; }
+        .filter-row:hover { background: var(--surface2); }
+        .filter-row input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+        .filter-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .filter-label { font-size: 0.83rem; font-weight: 500; color: var(--text); }
+        .filter-count { margin-left: auto; font-size: 0.7rem; font-family: 'DM Mono', monospace; color: var(--text-dim); background: var(--surface2); padding: 1px 6px; border-radius: 20px; border: 1px solid var(--border-soft); }
+
+        /* Sites list */
+        #sites-section { display: none; }
+        .sites-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .sites-count-badge { font-size: 0.7rem; font-family: 'DM Mono', monospace; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(47,129,247,0.3); padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+
+        .sites-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+        .tab-btn { flex: 1; padding: 5px 8px; background: var(--surface2); border: 1px solid var(--border-soft); border-radius: 6px; font-size: 0.68rem; font-weight: 700; font-family: 'Syne', sans-serif; color: var(--text-muted); cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tab-btn.active { background: var(--accent-glow); border-color: rgba(47,129,247,0.4); color: var(--accent); }
+        .tab-btn.active.local { background: rgba(163,113,247,0.12); border-color: rgba(163,113,247,0.4); color: var(--local); }
+
+        #sites-list { display: flex; flex-direction: column; gap: 4px; }
+        .site-card { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: var(--surface2); border: 1px solid var(--border-soft); border-radius: var(--radius); cursor: pointer; transition: all 0.18s ease; position: relative; overflow: hidden; }
+        .site-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; background: var(--card-accent, var(--text-dim)); transition: width 0.2s; }
+        .site-card:hover { border-color: var(--border); background: #1f2937; transform: translateX(2px); }
+        .site-card:hover::before { width: 4px; }
+        .site-card.active { border-color: var(--card-accent, var(--accent)); background: rgba(47,129,247,0.06); box-shadow: 0 0 0 1px var(--card-accent, var(--accent)) inset; }
+        .site-card-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
+        .site-card-body { flex: 1; min-width: 0; }
+        .site-card-name { font-size: 0.8rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+        .site-card-meta { font-size: 0.7rem; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+        .site-badge { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 10px; margin-left: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .site-card-arrow { color: var(--text-dim); font-size: 0.75rem; flex-shrink: 0; transition: color 0.2s, transform 0.2s; }
+        .site-card:hover .site-card-arrow { color: var(--text-muted); transform: translateX(2px); }
+
+        /* Map */
+        #map-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        #map { flex: 1; min-height: 0; width: 100%; }
+
+        /* Street view */
+        #sv-panel { width: 100%; height: 0; flex-shrink: 0; overflow: hidden; transition: height 0.38s cubic-bezier(0.4,0,0.2,1); position: relative; border-top: 2px solid var(--border); }
+        #sv-panel.open { height: 42%; }
+        #street-view { width: 100%; height: 100%; }
+        .sv-bar { position: absolute; top: 0; left: 0; right: 0; height: 36px; background: rgba(13,17,23,0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; z-index: 10; border-bottom: 1px solid var(--border); }
+        .sv-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; }
+        .sv-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+        .sv-close { background: rgba(248,81,73,0.15); border: 1px solid rgba(248,81,73,0.3); color: var(--red); border-radius: 5px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif; transition: background 0.2s; }
+        .sv-close:hover { background: rgba(248,81,73,0.3); }
+
+        /* Tooltip */
+        #hover-tooltip { position: fixed; background: rgba(13,17,23,0.96); color: var(--text); padding: 12px 15px; border-radius: var(--radius-lg); font-size: 0.8rem; font-family: 'Syne', sans-serif; pointer-events: none; z-index: 9999; display: none; max-width: 260px; border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,0.6); line-height: 1.55; }
+        .tt-title { font-weight: 700; font-size: 0.87rem; color: var(--text); margin-bottom: 7px; padding-bottom: 6px; border-bottom: 1px solid var(--border-soft); }
+        .tt-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; margin-bottom: 7px; }
+        .tt-row { display: flex; gap: 8px; margin-top: 3px; font-size: 0.77rem; }
+        .tt-key { color: var(--text-dim); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.6px; min-width: 52px; flex-shrink: 0; padding-top: 2px; font-family: 'DM Mono', monospace; }
+        .tt-val { color: var(--text-muted); }
+
+        .iw-wrap { font-family: 'Syne', sans-serif; min-width: 210px; max-width: 280px; }
+        .iw-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: #1a1f2e; }
+        .iw-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .iw-row { display: flex; gap: 8px; margin-top: 4px; font-size: 0.82rem; }
+        .iw-key { font-weight: 600; color: #5f6b7a; min-width: 80px; flex-shrink: 0; }
+        .iw-val { color: #1a1f2e; }
+        .iw-src { font-size: 0.7rem; background: #f3e8ff; color: #7c3aed; padding: 2px 8px; border-radius: 20px; font-weight: 700; display: inline-block; margin-bottom: 8px; }
+
+        .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Section toggle header */
+        .sec-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+        .sec-toggle-arrow { font-size: 0.65rem; color: var(--text-dim); transition: transform 0.2s; }
+        .sec-toggle-arrow.open { transform: rotate(90deg); }
+        .sec-body { overflow: hidden; transition: max-height 0.3s ease; }
+        .sec-body.collapsed { max-height: 0 !important; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="sidebar-header">
+        <div class="header-top">
+            <div class="header-icon">🏗️</div>
+            <div>
+                <div class="header-title">Delhi NCR Tracker</div>
+                <div class="header-sub">Live Construction Mapping</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-scroll">
+
+        <!-- STATUS + STATS -->
+        <div class="section">
+            <div id="status-indicator">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Initializing map…</span>
+            </div>
+            <div class="stats-strip">
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-osm" style="color:var(--accent)">0</div>
+                    <div class="stat-key">OSM Sites</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-local" style="color:var(--local)">0</div>
+                    <div class="stat-key">GeoJSON Sites</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AREA SEARCH -->
+        <div class="section">
+            <div class="sec-label">Area Search</div>
+            <div class="search-wrap" style="margin-bottom:9px">
+                <input type="text" id="search-input" placeholder="Enter neighborhood or city…" autocomplete="off">
+                <span class="search-icon">🔍</span>
+            </div>
+            <button class="btn btn-primary" onclick="fetchUserLocation()">
+                📍 Use My Current Location
+            </button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             CHANGE DETECTION SECTION  (NEW)
+        ═══════════════════════════════════════════ -->
+        <div class="section">
+            <div class="sec-toggle" onclick="toggleSection('change-body', 'change-arrow')">
+                <div class="sec-label" style="margin:0">📡 Change Detection</div>
+                <span class="sec-toggle-arrow open" id="change-arrow">▶</span>
+            </div>
+
+            <div class="sec-body" id="change-body" style="max-height:600px;margin-top:12px">
+
+                <!-- Baseline period -->
+                <div style="font-size:0.68rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Baseline (T1 — "Before")</div>
+                <div class="date-grid">
+                    <div class="date-group">
+                        <label>Start</label>
+                        <input type="date" id="t1-start" value="2022-01-01">
+                    </div>
+                    <div class="date-group">
+                        <label>End</label>
+                        <input type="date" id="t1-end" value="2022-03-31">
+                    </div>
+                </div>
+
+                <!-- Recent period -->
+                <div style="font-size:0.68rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:4px">Recent (T2 — "After")</div>
+                <div class="date-grid">
+                    <div class="date-group">
+                        <label>Start</label>
+                        <input type="date" id="t2-start" value="2024-01-01">
+                    </div>
+                    <div class="date-group">
+                        <label>End</label>
+                        <input type="date" id="t2-end" value="2024-03-31">
+                    </div>
+                </div>
+
+                <!-- Threshold slider -->
+                <div class="slider-row" style="margin-top:8px">
+                    <label>Threshold</label>
+                    <input type="range" id="cd-threshold" min="0.05" max="0.40" step="0.01" value="0.10"
+                           oninput="document.getElementById('cd-threshold-val').textContent=parseFloat(this.value).toFixed(2)">
+                    <span class="slider-val" id="cd-threshold-val">0.10</span>
+                </div>
+
+                <!-- Kernel slider (heatmap only) -->
+                <div class="slider-row">
+                    <label>Blur radius</label>
+                    <input type="range" id="cd-kernel" min="1" max="12" step="1" value="5"
+                           oninput="document.getElementById('cd-kernel-val').textContent=this.value">
+                    <span class="slider-val" id="cd-kernel-val">5</span>
+                </div>
+
+                <!-- Action buttons -->
+                <button class="btn btn-change" id="btn-change" style="margin-top:4px" onclick="loadChangeLayer()">
+                    🛰️ Load Change Detection
+                </button>
+                <button class="btn btn-heat" id="btn-heatmap" style="margin-top:6px" onclick="loadHeatmapLayer()">
+                    🌡️ Load Construction Heatmap
+                </button>
+                <button class="btn btn-dark" style="margin-top:6px;font-size:0.76rem" onclick="clearSatelliteLayers()">
+                    🗑️ Clear Satellite Layers
+                </button>
+
+                <!-- Change stats -->
+                <div id="change-stats" style="display:none;margin-top:10px">
+                    <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Area Stats</div>
+                    <div class="stats-4">
+                        <div class="stat-box">
+                            <div class="stat-val" id="stat-score" style="color:var(--change)">—</div>
+                            <div class="stat-key">Mean score</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-val" id="stat-area" style="color:var(--heat)">—</div>
+                            <div class="stat-key">Changed km²</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legends -->
+                <div id="legend-change" style="display:none" class="legend-strip">
+                    <div style="font-size:0.65rem;color:var(--text-dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.8px">Change score</div>
+                    <div class="legend-bar"></div>
+                    <div class="legend-ends"><span>Low</span><span>High</span></div>
+                </div>
+                <div id="legend-heatmap" style="display:none" class="legend-strip">
+                    <div style="font-size:0.65rem;color:var(--text-dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.8px">Construction density</div>
+                    <div class="legend-bar-heat"></div>
+                    <div class="legend-ends"><span>Low</span><span>High</span></div>
+                </div>
+
+            </div><!-- /sec-body -->
+        </div>
+
+        <!-- ═══════════════════════════════════
+             TRUE-COLOUR SENTINEL-2  (existing)
+        ═══════════════════════════════════ -->
+        <div class="section">
+            <div class="sec-toggle" onclick="toggleSection('s2-body','s2-arrow')">
+                <div class="sec-label" style="margin:0">📡 Sentinel-2 True Colour</div>
+                <span class="sec-toggle-arrow open" id="s2-arrow">▶</span>
+            </div>
+
+            <div class="sec-body" id="s2-body" style="max-height:300px;margin-top:12px">
+                <div class="date-grid">
+                    <div class="date-group">
+                        <label>Start date</label>
+                        <input type="date" id="s2-start" value="2025-10-01">
+                    </div>
+                    <div class="date-group">
+                        <label>End date</label>
+                        <input type="date" id="s2-end" value="2026-03-20">
+                    </div>
+                </div>
+
+                <label class="filter-row" style="margin-top:8px">
+                    <input type="checkbox" id="toggle-s2" checked onchange="toggleS2Layer()">
+                    <span class="filter-dot" style="background:var(--accent)"></span>
+                    <span class="filter-label">Show layer</span>
+                </label>
+
+                <button class="btn btn-dark" style="margin-top:8px" onclick="reloadS2Layer()">
+                    🔄 Reload with new dates
+                </button>
+            </div>
+        </div>
+
+        <!-- GeoJSON Loader -->
+        <div class="section">
+            <div class="sec-toggle" onclick="toggleSection('geojson-body','geojson-arrow')">
+                <div class="sec-label" style="margin:0">🗺️ GeoJSON Data</div>
+                <span class="sec-toggle-arrow open" id="geojson-arrow">▶</span>
+            </div>
+
+            <div class="sec-body" id="geojson-body" style="max-height:500px;margin-top:12px">
+                <div class="upload-area" id="upload-area">
+                    <input type="file" id="geojson-file" accept=".geojson,.json" onchange="loadGeoJSONFile(this)">
+                    <span class="upload-icon">📂</span>
+                    <div class="upload-text">Drop or click to upload
+                        <strong id="upload-filename">delhi_ncr_construction_sites.geojson</strong>
+                    </div>
+                </div>
+                <div class="upload-hint">Supports .geojson / .json files</div>
+                <div class="or-divider">OR</div>
+                <div class="url-row">
+                    <input type="text" id="geojson-url" placeholder="Paste GeoJSON URL…">
+                    <button class="btn btn-purple btn-url" onclick="loadGeoJSONFromURL()">Load</button>
+                </div>
+                <button class="btn btn-dark" style="margin-top:8px" onclick="loadDefaultGeoJSON()">
+                    🗺️ Load delhi_ncr_construction_sites.geojson
+                </button>
+                <button class="btn btn-dark" style="margin-top:6px;color:var(--red);border-color:rgba(248,81,73,0.3)" onclick="clearLocalLayer()">
+                    🗑️ Clear GeoJSON Layer
+                </button>
+            </div>
+        </div>
+
+        <!-- Street view -->
+        <div class="section">
+            <div class="sec-label">Street View</div>
+            <button class="btn btn-dark" id="plunge-btn" onclick="toggleStreetView()">
+                🔭 Plunge into Street View
+            </button>
+            <div style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:6px;">
+                Activate → click map to explore any point
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="section">
+            <div class="sec-label">Filter Layers</div>
+            <label class="filter-row">
+                <input type="checkbox" id="filter-buildings" checked onchange="applyFilters()">
+                <span class="filter-dot" style="background:var(--bldg)"></span>
+                <span class="filter-label">Building Projects</span>
+                <span class="filter-count" id="count-bldg">0</span>
+            </label>
+            <label class="filter-row">
+                <input type="checkbox" id="filter-roads" checked onchange="applyFilters()">
+                <span class="filter-dot" style="background:var(--road)"></span>
+                <span class="filter-label">Road &amp; Highway Works</span>
+                <span class="filter-count" id="count-road">0</span>
+            </label>
+            <label class="filter-row">
+                <input type="checkbox" id="filter-landuse" checked onchange="applyFilters()">
+                <span class="filter-dot" style="background:var(--land)"></span>
+                <span class="filter-label">Land Development</span>
+                <span class="filter-count" id="count-land">0</span>
+            </label>
+            <label class="filter-row">
+                <input type="checkbox" id="filter-local" checked onchange="applyLocalLayerStyle()">
+                <span class="filter-dot" style="background:var(--local)"></span>
+                <span class="filter-label">📍 GeoJSON Sites</span>
+                <span class="filter-count" id="count-local">0</span>
+            </label>
+        </div>
+
+        <!-- Sites list -->
+        <div class="section" id="sites-section">
+            <div class="sites-header">
+                <div class="sec-label" style="margin:0">Active Sites</div>
+                <span class="sites-count-badge" id="sites-count-badge">0</span>
+            </div>
+            <div class="sites-tabs">
+                <button class="tab-btn active" id="tab-all"    onclick="switchTab('all')">All</button>
+                <button class="tab-btn"         id="tab-osm"   onclick="switchTab('osm')">OSM</button>
+                <button class="tab-btn"         id="tab-local" onclick="switchTab('local')">GeoJSON</button>
+            </div>
+            <div id="sites-list"></div>
+        </div>
+
+    </div>
+</div>
+
+<div id="map-container">
+    <div id="map"></div>
+    <div id="sv-panel">
+        <div class="sv-bar">
+            <span class="sv-label">🔭 Street View</span>
+            <span class="sv-hint">Click map above to teleport</span>
+            <button class="sv-close" onclick="closeStreetView()">✕ Close</button>
+        </div>
+        <div id="street-view" style="padding-top:36px;height:100%;box-sizing:border-box;"></div>
+    </div>
+</div>
+
+<div id="hover-tooltip"></div>
+
+<script>
+'use strict';
+
+const API = 'http://127.0.0.1:5000';  // ← your Flask backend
+
+// ── State ──────────────────────────────────────────────────────────────────
+let map, infoWindow, panorama;
+let svActive       = false;
+let svClickHandle  = null;
+let activeSiteId   = null;
+let allFeatures    = [];
+let localFeatures  = [];
+let localLayer     = null;
+let blinkInterval  = null;
+let currentTab     = 'all';
+
+// Satellite layer handles (stored so we can remove them)
+let s2Layer        = null;   // true-colour Sentinel-2
+let changeLayer    = null;   // change detection score
+let heatmapLayer   = null;   // smoothed heatmap
+
+const tooltip = document.getElementById('hover-tooltip');
+
+const MIRRORS = [
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.openstreetmap.fr/api/interpreter',
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+];
+
+// ── Section toggle helper ──────────────────────────────────────────────────
+function toggleSection(bodyId, arrowId) {
+    const body  = document.getElementById(bodyId);
+    const arrow = document.getElementById(arrowId);
+    const isOpen = !body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', isOpen);
+    arrow.classList.toggle('open', !isOpen);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 11,
+        center: { lat: 28.6139, lng: 77.2090 },
+        mapTypeControl: true,
+        mapTypeControlOptions: { position: google.maps.ControlPosition.TOP_RIGHT },
+        streetViewControl: false,
+        fullscreenControl: true,
+        styles: [
+            { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit',      stylers: [{ visibility: 'simplified' }] }
+        ]
+    });
+
+    infoWindow = new google.maps.InfoWindow();
+    localLayer = new google.maps.Data({ map });
+    setupLocalLayerInteractions();
+    setupInteractions();
+
+    google.maps.event.addListenerOnce(map, 'idle', () => {
+        fetchData();
+        loadS2Layer();   // auto-load true-colour on start
+    });
+
+    let timer;
+    const schedule = () => {
+        clearTimeout(timer);
+        setStatus('waiting', 'Settling…');
+        timer = setTimeout(fetchData, 1500);
+    };
+    map.addListener('dragend',      schedule);
+    map.addListener('zoom_changed', schedule);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  SATELLITE LAYER LOADERS
+// ══════════════════════════════════════════════════════════════════════════
+
+function makeTileLayer(urlFormat, opacity) {
+    return new google.maps.ImageMapType({
+        getTileUrl: (tile, zoom) =>
+            urlFormat.replace('{z}', zoom).replace('{x}', tile.x).replace('{y}', tile.y),
+        tileSize  : new google.maps.Size(256, 256),
+        maxZoom   : 20,
+        minZoom   : 0,
+        opacity   : opacity
+    });
+}
+
+function removeLayer(layerRef) {
+    if (!layerRef) return null;
+    const idx = map.overlayMapTypes.getArray().indexOf(layerRef);
+    if (idx !== -1) map.overlayMapTypes.removeAt(idx);
+    return null;
+}
+
+// ── True-colour Sentinel-2 ─────────────────────────────────────────────────
+async function loadS2Layer() {
+    setStatus('loading', '<span class="spin">⟳</span> Loading Sentinel-2 true colour…');
+    try {
+        const start = document.getElementById('s2-start').value;
+        const end   = document.getElementById('s2-end').value;
+        const res   = await fetch(`${API}/api/gee-construction?date_start=${start}&date_end=${end}`);
+        const data  = await res.json();
+        if (data.status !== 'success') throw new Error(data.message);
+
+        s2Layer = removeLayer(s2Layer);
+        s2Layer = makeTileLayer(data.urlFormat, 0.8);
+        map.overlayMapTypes.push(s2Layer);
+        toggleS2Layer();
+        setStatus('ok', '✅ Sentinel-2 layer loaded.');
+    } catch (e) {
+        setStatus('error', `❌ S2 failed: ${e.message}`);
+    }
+}
+
+function reloadS2Layer() { loadS2Layer(); }
+
+function toggleS2Layer() {
+    if (!s2Layer) return;
+    s2Layer.setOpacity(document.getElementById('toggle-s2').checked ? 0.8 : 0);
+}
+
+// ── Change detection score layer ──────────────────────────────────────────
+async function loadChangeLayer() {
+    const btn = document.getElementById('btn-change');
+    btn.classList.add('active');
+    setStatus('loading', '<span class="spin">⟳</span> Running change detection…');
+
+    try {
+        const params = new URLSearchParams({
+            t1_start  : document.getElementById('t1-start').value,
+            t1_end    : document.getElementById('t1-end').value,
+            t2_start  : document.getElementById('t2-start').value,
+            t2_end    : document.getElementById('t2-end').value,
+            threshold : document.getElementById('cd-threshold').value
+        });
+
+        const res  = await fetch(`${API}/api/gee-change-detection?${params}`);
+        const data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message);
+
+        // Remove previous layers of the same type before adding new
+        heatmapLayer = removeLayer(heatmapLayer);
+        changeLayer  = removeLayer(changeLayer);
+
+        changeLayer = makeTileLayer(data.urlFormat, 0.75);
+        map.overlayMapTypes.push(changeLayer);
+
+        document.getElementById('legend-change').style.display  = 'block';
+        document.getElementById('legend-heatmap').style.display = 'none';
+        document.getElementById('btn-heatmap').classList.remove('active');
+
+        // Also fetch area stats for the current map bounds
+        fetchChangeStats();
+        setStatus('ok', `✅ Change detection: ${data.baseline.start} → ${data.recent.end}`);
+
+    } catch (e) {
+        btn.classList.remove('active');
+        setStatus('error', `❌ Change detection failed: ${e.message}`);
+    }
+}
+
+// ── Heatmap layer ──────────────────────────────────────────────────────────
+async function loadHeatmapLayer() {
+    const btn = document.getElementById('btn-heatmap');
+    btn.classList.add('active');
+    setStatus('loading', '<span class="spin">⟳</span> Building construction heatmap…');
+
+    try {
+        const params = new URLSearchParams({
+            t1_start      : document.getElementById('t1-start').value,
+            t1_end        : document.getElementById('t1-end').value,
+            t2_start      : document.getElementById('t2-start').value,
+            t2_end        : document.getElementById('t2-end').value,
+            kernel_radius : document.getElementById('cd-kernel').value
+        });
+
+        const res  = await fetch(`${API}/api/gee-heatmap?${params}`);
+        const data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message);
+
+        changeLayer  = removeLayer(changeLayer);
+        heatmapLayer = removeLayer(heatmapLayer);
+
+        heatmapLayer = makeTileLayer(data.urlFormat, 0.72);
+        map.overlayMapTypes.push(heatmapLayer);
+
+        document.getElementById('legend-heatmap').style.display = 'block';
+        document.getElementById('legend-change').style.display  = 'none';
+        document.getElementById('btn-change').classList.remove('active');
+
+        fetchChangeStats();
+        setStatus('ok', `✅ Heatmap loaded (kernel r=${data.kernelRadius})`);
+
+    } catch (e) {
+        btn.classList.remove('active');
+        setStatus('error', `❌ Heatmap failed: ${e.message}`);
+    }
+}
+
+// ── Stats fetch ────────────────────────────────────────────────────────────
+async function fetchChangeStats() {
+    try {
+        const bounds = map.getBounds();
+        if (!bounds) return;
+        const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+        const params = new URLSearchParams({
+            minLng   : sw.lng(), minLat: sw.lat(),
+            maxLng   : ne.lng(), maxLat: ne.lat(),
+            t1_start : document.getElementById('t1-start').value,
+            t1_end   : document.getElementById('t1-end').value,
+            t2_start : document.getElementById('t2-start').value,
+            t2_end   : document.getElementById('t2-end').value
+        });
+
+        const res  = await fetch(`${API}/api/gee-stats?${params}`);
+        const data = await res.json();
+        if (data.status !== 'success') return;
+
+        document.getElementById('stat-score').textContent = data.meanChangeScore.toFixed(3);
+        document.getElementById('stat-area').textContent  = data.changedAreaKm2 + ' km²';
+        document.getElementById('change-stats').style.display = 'block';
+    } catch (_) { /* non-critical */ }
+}
+
+// ── Clear satellite layers ─────────────────────────────────────────────────
+function clearSatelliteLayers() {
+    s2Layer      = removeLayer(s2Layer);
+    changeLayer  = removeLayer(changeLayer);
+    heatmapLayer = removeLayer(heatmapLayer);
+    document.getElementById('toggle-s2').checked             = false;
+    document.getElementById('btn-change').classList.remove('active');
+    document.getElementById('btn-heatmap').classList.remove('active');
+    document.getElementById('legend-change').style.display   = 'none';
+    document.getElementById('legend-heatmap').style.display  = 'none';
+    document.getElementById('change-stats').style.display    = 'none';
+    setStatus('idle', 'Satellite layers cleared.');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  GEOJSON LOADERS  (unchanged from previous version)
+// ══════════════════════════════════════════════════════════════════════════
+
+function loadGeoJSONFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('upload-filename').textContent = file.name;
+    document.getElementById('upload-area').classList.add('has-file');
+    setStatus('loading', `<span class="spin">⟳</span> Loading ${file.name}…`);
+    const reader = new FileReader();
+    reader.onload = e => {
+        try   { ingestLocalGeoJSON(JSON.parse(e.target.result), file.name); }
+        catch { setStatus('error', '❌ Invalid GeoJSON file.'); }
+    };
+    reader.readAsText(file);
+}
+
+async function loadGeoJSONFromURL() {
+    const url = document.getElementById('geojson-url').value.trim();
+    if (!url) { alert('Please enter a GeoJSON URL.'); return; }
+    setStatus('loading', '<span class="spin">⟳</span> Fetching GeoJSON…');
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        ingestLocalGeoJSON(await res.json(), url.split('/').pop());
+    } catch (e) { setStatus('error', `❌ Failed to fetch: ${e.message}`); }
+}
+
+async function loadDefaultGeoJSON() {
+    setStatus('loading', '<span class="spin">⟳</span> Loading delhi_ncr_construction_sites.geojson…');
+    try {
+        const res = await fetch('delhi_ncr_construction_sites.geojson');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        ingestLocalGeoJSON(await res.json(), 'delhi_ncr_construction_sites.geojson');
+    } catch (e) { setStatus('error', `❌ ${e.message}`); }
+}
+
+function ingestLocalGeoJSON(geojson, sourceName) {
+    localLayer.forEach(f => localLayer.remove(f));
+    localFeatures = [];
+    localLayer.addGeoJson(geojson).forEach((feature, idx) => {
+        const props = {};
+        feature.forEachProperty((v, k) => { props[k] = v; });
+        localFeatures.push({
+            id      : `local-${idx}`,
+            feature,
+            name    : props.name||props.Name||props.project||`GeoJSON Site #${idx+1}`,
+            category: props.type||props.category||props.construction||'Construction Site',
+            props,
+            source  : sourceName,
+            color   : '#a371f7',
+            bg      : 'rgba(163,113,247,0.12)',
+            icon    : '📍',
+            isLocal : true
+        });
+    });
+    applyLocalLayerStyle();
+    buildSitesList();
+    const total = localFeatures.length;
+    document.getElementById('stat-local').textContent  = total;
+    document.getElementById('count-local').textContent = total;
+    setStatus(total > 0 ? 'ok' : 'idle',
+        total > 0 ? `✅ ${total} GeoJSON site(s) + ${allFeatures.length} OSM site(s).`
+                  : 'ℹ️ GeoJSON loaded — no features found.');
+}
+
+function applyLocalLayerStyle() {
+    const visible = document.getElementById('filter-local').checked;
+    localLayer.setStyle(() => ({
+        fillColor   : '#a371f7', strokeColor: '#7c3aed', strokeWeight: 2.5,
+        fillOpacity : visible ? 0.55 : 0, strokeOpacity: visible ? 1 : 0, zIndex: 5
+    }));
+}
+
+function clearLocalLayer() {
+    localLayer.forEach(f => localLayer.remove(f));
+    localFeatures = [];
+    document.getElementById('stat-local').textContent  = 0;
+    document.getElementById('count-local').textContent = 0;
+    document.getElementById('upload-filename').textContent = 'delhi_ncr_construction_sites.geojson';
+    document.getElementById('upload-area').classList.remove('has-file');
+    buildSitesList();
+    setStatus('idle', 'GeoJSON layer cleared.');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  LOCAL LAYER INTERACTIONS
+// ══════════════════════════════════════════════════════════════════════════
+
+function setupLocalLayerInteractions() {
+    localLayer.addListener('mouseover', e => {
+        localLayer.overrideStyle(e.feature, { strokeWeight: 4, fillOpacity: 0.85, strokeColor: '#e6edf3' });
+        showLocalTooltip(e.feature);
+        tooltip.style.display = 'block';
+    });
+    localLayer.addListener('mousemove', e => positionTooltip(e.domEvent));
+    localLayer.addListener('mouseout',  () => { localLayer.revertStyle(); tooltip.style.display = 'none'; });
+    localLayer.addListener('click', e => {
+        if (svActive) return;
+        tooltip.style.display = 'none';
+        const idx = localFeatures.findIndex(s => s.feature === e.feature);
+        if (idx !== -1) focusLocalSite(localFeatures[idx]);
+    });
+}
+
+function showLocalTooltip(feature) {
+    const p = {};
+    feature.forEachProperty((v, k) => { p[k] = v; });
+    tooltip.innerHTML = `
+        <div class="tt-title">${p.name||p.Name||p.project||'GeoJSON Site'}</div>
+        <span class="tt-badge" style="background:rgba(163,113,247,0.18);color:#a371f7;border:1px solid rgba(163,113,247,0.35)">📍 GeoJSON</span>
+        <div class="tt-row"><span class="tt-key">Type</span><span class="tt-val">${p.type||p.category||'—'}</span></div>
+        <div class="tt-row"><span class="tt-key">Area</span><span class="tt-val">${p.area||p.Area||'—'}</span></div>
+    `;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  OSM DATA FETCH
+// ══════════════════════════════════════════════════════════════════════════
+
+async function fetchWithMirrors(query) {
+    for (const url of MIRRORS) {
+        try {
+            const res = await fetch(url, { method:'POST', body:query, headers:{'Content-Type':'application/x-www-form-urlencoded'} });
+            if (res.ok) return await res.json();
+        } catch (e) { console.warn('Mirror failed:', url, e.message); }
+    }
+    throw new Error('All Overpass mirrors failed');
+}
+
+async function fetchData() {
+    setStatus('loading', '<span class="spin">⟳</span> Scanning OSM data…');
+    const bounds = map.getBounds();
+    if (!bounds) return;
+    const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+    const bbox = `${sw.lat()},${sw.lng()},${ne.lat()},${ne.lng()}`;
+    const query = `[out:json][timeout:30];
+(
+  way["building"="construction"](${bbox});
+  way["highway"="construction"](${bbox});
+  way["landuse"="construction"](${bbox});
+  relation["building"="construction"](${bbox});
+  relation["landuse"="construction"](${bbox});
+);
+out body;>;out skel qt;`;
+
+    try {
+        const osmData = await fetchWithMirrors(query);
+        map.data.forEach(f => map.data.remove(f));
+        allFeatures = []; activeSiteId = null;
+        map.data.addGeoJson(osmtogeojson(osmData));
+
+        let idxB=0, idxR=0, idxL=0;
+        map.data.forEach(feature => {
+            const type = getOSMType(feature);
+            if (!type) return;
+            if (type.key==='bldg') idxB++;
+            if (type.key==='road') idxR++;
+            if (type.key==='land') idxL++;
+            allFeatures.push({ id:feature.getId(), feature, ...type, isLocal:false });
+        });
+        document.getElementById('count-bldg').textContent = idxB;
+        document.getElementById('count-road').textContent = idxR;
+        document.getElementById('count-land').textContent = idxL;
+        document.getElementById('stat-osm').textContent   = allFeatures.length;
+        applyFilters();
+        buildSitesList();
+        const total = allFeatures.length + localFeatures.length;
+        setStatus(total>0?'ok':'idle', total>0?`✅ ${allFeatures.length} OSM + ${localFeatures.length} GeoJSON site(s).`:'ℹ️ No active sites found here.');
+    } catch (err) {
+        console.error(err);
+        setStatus('error', '❌ OSM fetch failed. Satellite layers unaffected.');
+    }
+}
+
+// ── Search & location ──────────────────────────────────────────────────────
+function setupSearch() {
+    const input = document.getElementById('search-input');
+    const sb    = new google.maps.places.SearchBox(input);
+    map.addListener('bounds_changed', () => sb.setBounds(map.getBounds()));
+    sb.addListener('places_changed', () => {
+        const places = sb.getPlaces();
+        if (!places?.length) return;
+        const place = places[0];
+        if (!place.geometry) return;
+        place.geometry.viewport ? map.fitBounds(place.geometry.viewport)
+                                : (map.setCenter(place.geometry.location), map.setZoom(14));
+        fetchData();
+    });
+}
+
+function reverseGeocode(lat, lng) {
+    new google.maps.Geocoder().geocode({ location:{lat,lng} }, (res,st) => {
+        if (st==='OK'&&res[0]) document.getElementById('search-input').value = res[0].formatted_address;
+    });
+}
+
+function fetchUserLocation() {
+    setStatus('loading', 'Requesting location…');
+    if (!navigator.geolocation) { setStatus('error','Geolocation not supported.'); return; }
+    navigator.geolocation.getCurrentPosition(
+        ({coords}) => {
+            map.setCenter({lat:coords.latitude, lng:coords.longitude});
+            map.setZoom(14);
+            reverseGeocode(coords.latitude, coords.longitude);
+            fetchData();
+        },
+        () => setStatus('error','Location access denied.')
+    );
+}
+
+// ── Feature helpers ────────────────────────────────────────────────────────
+function getOSMType(feature) {
+    if (feature.getProperty('building')) return {key:'bldg',label:'Building', color:'#f0527a',bg:'rgba(240,82,122,0.12)',icon:'🏢'};
+    if (feature.getProperty('highway'))  return {key:'road',label:'Roadway',  color:'#58a6ff',bg:'rgba(88,166,255,0.12)',icon:'🛣️'};
+    if (feature.getProperty('landuse'))  return {key:'land',label:'Land Dev', color:'#ffa657',bg:'rgba(255,166,87,0.12)', icon:'🏗️'};
+    return null;
+}
+
+function prop(f,...keys) {
+    for(const k of keys){const v=f.getProperty(k);if(v)return v;} return '—';
+}
+
+function getBounds(feature) {
+    const b = new google.maps.LatLngBounds();
+    feature.getGeometry().forEachLatLng(ll=>b.extend(ll));
+    return b;
+}
+
+// ── Sites list ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    currentTab = tab;
+    ['all','osm','local'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        btn.classList.toggle('active', t===tab);
+        if(t==='local') btn.classList.toggle('local', t===tab);
+    });
+    buildSitesList();
+}
+
+function buildSitesList() {
+    const sec   = document.getElementById('sites-section');
+    const list  = document.getElementById('sites-list');
+    const badge = document.getElementById('sites-count-badge');
+    const combined = [...allFeatures,...localFeatures];
+    list.innerHTML = '';
+    badge.textContent = combined.length;
+    if(!combined.length){sec.style.display='none';return;}
+    sec.style.display = 'block';
+    const filtered = combined.filter(s =>
+        currentTab==='osm'   ? !s.isLocal :
+        currentTab==='local' ?  s.isLocal : true
+    );
+    if(!filtered.length){
+        list.innerHTML=`<div style="font-size:.78rem;color:var(--text-dim);text-align:center;padding:14px 0">No sites in this category</div>`;
+        return;
+    }
+    filtered.forEach((site,idx) => {
+        const label = site.isLocal ? site.name : (prop(site.feature,'name')!=='—'?prop(site.feature,'name'):`${site.label} Site #${idx+1}`);
+        const sub   = site.isLocal ? site.category : (prop(site.feature,'construction','building:use','highway')!=='—'?prop(site.feature,'construction','building:use','highway'):site.label);
+        const srcBadge = site.isLocal
+            ? `<span class="site-badge" style="background:rgba(163,113,247,0.18);color:#a371f7">GeoJSON</span>`
+            : `<span class="site-badge" style="background:rgba(47,129,247,0.12);color:#58a6ff">OSM</span>`;
+        const card = document.createElement('div');
+        card.className = 'site-card';
+        card.id        = `site-card-${site.id}`;
+        card.style.setProperty('--card-accent', site.color);
+        card.innerHTML = `
+            <div class="site-card-icon" style="background:${site.bg};color:${site.color}">${site.icon}</div>
+            <div class="site-card-body">
+                <div class="site-card-name" title="${label}">${label}${srcBadge}</div>
+                <div class="site-card-meta">${sub}</div>
+            </div><span class="site-card-arrow">›</span>`;
+        card.addEventListener('click', () => site.isLocal ? focusLocalSite(site) : focusSite(site));
+        list.appendChild(card);
+    });
+}
+
+// ── Focus ──────────────────────────────────────────────────────────────────
+function clearActiveCard() {
+    if(activeSiteId!==null){
+        const prev=document.getElementById(`site-card-${activeSiteId}`);
+        if(prev) prev.classList.remove('active');
+        stopBlink();
+    }
+}
+
+function focusSite(site) {
+    clearActiveCard(); activeSiteId=site.id;
+    const card=document.getElementById(`site-card-${site.id}`);
+    if(card){card.classList.add('active');card.scrollIntoView({behavior:'smooth',block:'nearest'});}
+    const bounds=getBounds(site.feature);
+    map.fitBounds(bounds,{top:80,bottom:80,left:40,right:40});
+    startBlink(site);
+    infoWindow.setContent(buildOSMInfoContent(site.feature,site));
+    infoWindow.setPosition(bounds.getCenter()); infoWindow.open(map);
+}
+
+function focusLocalSite(site) {
+    clearActiveCard(); activeSiteId=site.id;
+    const card=document.getElementById(`site-card-${site.id}`);
+    if(card){card.classList.add('active');card.scrollIntoView({behavior:'smooth',block:'nearest'});}
+    try{
+        const bounds=getBounds(site.feature);
+        map.fitBounds(bounds,{top:80,bottom:80,left:40,right:40});
+        infoWindow.setPosition(bounds.getCenter());
+    }catch(e){
+        const geom=site.feature.getGeometry();
+        if(geom){const pos=geom.get?geom.get():null;if(pos){map.setCenter(pos);map.setZoom(16);infoWindow.setPosition(pos);}}
+    }
+    infoWindow.setContent(buildLocalInfoContent(site)); infoWindow.open(map);
+    let bState=false; stopBlink();
+    blinkInterval=setInterval(()=>{
+        bState=!bState;
+        localLayer.overrideStyle(site.feature,{fillColor:bState?'#fff':'#a371f7',strokeColor:'#a371f7',strokeWeight:bState?5:2.5,fillOpacity:bState?.95:.6});
+    },350);
+    setTimeout(()=>{stopBlink();localLayer.overrideStyle(site.feature,{fillColor:'#a371f7',strokeColor:'#7c3aed',strokeWeight:2.5,fillOpacity:.55});},3500);
+}
+
+// ── Blink ──────────────────────────────────────────────────────────────────
+let blinkState=false;
+function startBlink(site){
+    stopBlink(); blinkState=false;
+    blinkInterval=setInterval(()=>{
+        blinkState=!blinkState;
+        map.data.overrideStyle(site.feature,{fillColor:blinkState?'#fff':site.color,strokeColor:site.color,strokeWeight:blinkState?5:2,fillOpacity:blinkState?.95:.6,visible:true});
+    },350);
+    setTimeout(()=>{stopBlink();map.data.overrideStyle(site.feature,{fillColor:site.color,strokeColor:site.color,strokeWeight:3,fillOpacity:.8,visible:true});},3500);
+}
+function stopBlink(){
+    if(blinkInterval){clearInterval(blinkInterval);blinkInterval=null;}
+    map.data.revertStyle(); if(localLayer) localLayer.revertStyle();
+}
+
+// ── OSM interactions ───────────────────────────────────────────────────────
+function setupInteractions(){
+    map.data.addListener('mouseover',e=>{
+        map.data.overrideStyle(e.feature,{strokeWeight:4,fillOpacity:.9,strokeColor:'#e6edf3'});
+        showOSMTooltip(e.feature); tooltip.style.display='block';
+    });
+    map.data.addListener('mousemove',e=>positionTooltip(e.domEvent));
+    map.data.addListener('mouseout', ()=>{map.data.revertStyle();tooltip.style.display='none';});
+    map.data.addListener('click',e=>{
+        if(svActive) return;
+        tooltip.style.display='none';
+        const type=getOSMType(e.feature);
+        if(!type) return;
+        const site=allFeatures.find(s=>s.id===e.feature.getId());
+        if(site) focusSite(site);
+        else{infoWindow.setContent(buildOSMInfoContent(e.feature,type));const b=getBounds(e.feature);infoWindow.setPosition(b.getCenter());infoWindow.open(map);}
+    });
+}
+
+// ── Tooltips ───────────────────────────────────────────────────────────────
+function showOSMTooltip(feature){
+    const type=getOSMType(feature)||{label:'Unknown',color:'#7d8590',bg:'rgba(125,133,144,0.1)'};
+    tooltip.innerHTML=`
+        <div class="tt-title">${prop(feature,'name')!=='—'?prop(feature,'name'):'Unnamed Project'}</div>
+        <span class="tt-badge" style="background:${type.bg};color:${type.color};border:1px solid ${type.color}33">${type.label}</span>
+        <div class="tt-row"><span class="tt-key">Type</span><span class="tt-val">${prop(feature,'construction','building:use','highway')}</span></div>
+        <div class="tt-row"><span class="tt-key">Company</span><span class="tt-val">${prop(feature,'operator','contractor','developer')}</span></div>
+    `;
+}
+
+function positionTooltip(e){
+    const x=e.clientX+18,y=e.clientY+18;
+    const tw=tooltip.offsetWidth||260,th=tooltip.offsetHeight||140;
+    tooltip.style.left=(x+tw>window.innerWidth?e.clientX-tw-12:x)+'px';
+    tooltip.style.top=(y+th>window.innerHeight?e.clientY-th-12:y)+'px';
+}
+
+// ── Info window ────────────────────────────────────────────────────────────
+function buildOSMInfoContent(feature,typeOrSite){
+    const type=typeOrSite.key?typeOrSite:getOSMType(feature)||{label:'Unknown',color:'#7d8590'};
+    const name=prop(feature,'name'),detail=prop(feature,'construction','building:use','highway'),
+          op=prop(feature,'operator','contractor','developer'),
+          start=prop(feature,'start_date'),end=prop(feature,'end_date','opening_date'),
+          ref=prop(feature,'ref'),desc=prop(feature,'description');
+    return `<div class="iw-wrap">
+        <div class="iw-title">${name!=='—'?name:'Unnamed Project'}</div>
+        <span class="iw-src">OpenStreetMap</span>
+        <span class="iw-badge" style="background:${type.color}">${type.label}</span>
+        <div class="iw-row"><span class="iw-key">Type / Use</span><span class="iw-val" style="text-transform:capitalize">${detail}</span></div>
+        <div class="iw-row"><span class="iw-key">Company</span><span class="iw-val">${op}</span></div>
+        <div class="iw-row"><span class="iw-key">Start Date</span><span class="iw-val">${start}</span></div>
+        <div class="iw-row"><span class="iw-key">Est. End</span><span class="iw-val">${end}</span></div>
+        ${ref!=='—'?`<div class="iw-row"><span class="iw-key">Ref</span><span class="iw-val">${ref}</span></div>`:''}
+        ${desc!=='—'?`<div style="margin-top:8px;font-size:.78rem;color:#888;font-style:italic">${desc}</div>`:''}
+    </div>`;
+}
+
+function buildLocalInfoContent(site){
+    const rows=Object.entries(site.props).filter(([k])=>!['geometry','type'].includes(k.toLowerCase())).slice(0,8)
+        .map(([k,v])=>`<div class="iw-row"><span class="iw-key">${k}</span><span class="iw-val">${v}</span></div>`).join('');
+    return `<div class="iw-wrap">
+        <div class="iw-title">${site.name}</div>
+        <span class="iw-src" style="background:#f3e8ff;color:#7c3aed">📍 ${site.source}</span>
+        <span class="iw-badge" style="background:#a371f7">GeoJSON Site</span>
+        <div class="iw-row"><span class="iw-key">Category</span><span class="iw-val">${site.category}</span></div>
+        ${rows}
+    </div>`;
+}
+
+// ── Filters ────────────────────────────────────────────────────────────────
+function applyFilters(){
+    const showB=document.getElementById('filter-buildings').checked,
+          showR=document.getElementById('filter-roads').checked,
+          showL=document.getElementById('filter-landuse').checked;
+    map.data.setStyle(feature=>{
+        const type=getOSMType(feature);
+        if(!type) return{visible:false};
+        const show=(type.key==='bldg'&&showB)||(type.key==='road'&&showR)||(type.key==='land'&&showL);
+        return{visible:show,fillColor:type.color,strokeColor:type.color,strokeWeight:2,fillOpacity:.6};
+    });
+    if(infoWindow) infoWindow.close();
+    tooltip.style.display='none';
+}
+
+// ── Street view ────────────────────────────────────────────────────────────
+function toggleStreetView(){svActive?closeStreetView():openStreetView();}
+
+function openStreetView(){
+    svActive=true;
+    document.getElementById('sv-panel').classList.add('open');
+    const btn=document.getElementById('plunge-btn');
+    btn.className='btn btn-danger'; btn.innerHTML='🔴 Exit Street View';
+    panorama=new google.maps.StreetViewPanorama(document.getElementById('street-view'),{
+        position:map.getCenter(),pov:{heading:34,pitch:10},zoom:1,
+        motionTracking:false,motionTrackingControl:false,fullscreenControl:false
+    });
+    svClickHandle=map.addListener('click',e=>{panorama.setPosition(e.latLng);});
+    map.setOptions({draggableCursor:'crosshair'});
+}
+
+function closeStreetView(){
+    svActive=false;
+    document.getElementById('sv-panel').classList.remove('open');
+    const btn=document.getElementById('plunge-btn');
+    btn.className='btn btn-dark'; btn.innerHTML='🔭 Plunge into Street View';
+    if(svClickHandle){google.maps.event.removeListener(svClickHandle);svClickHandle=null;}
+    map.setOptions({draggableCursor:null}); panorama=null;
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
+function setStatus(state,html){
+    const dot=document.getElementById('status-dot'),text=document.getElementById('status-text');
+    const colors={ok:'#3fb950',error:'#f85149',loading:'#2f81f7',waiting:'#d29922',idle:'#7d8590'};
+    dot.style.background=colors[state]||colors.idle; text.innerHTML=html;
+}
+</script>
+
+<script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_3zs7YYl66MofAn1NAq3fvpg9HWL7hRs&libraries=places&callback=initMap"
+    async defer>
+</script>
+
+</body>
+</html>
