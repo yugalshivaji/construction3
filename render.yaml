@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: delhi-construction-backend
+    runtime: python
+    repo: https://github.com/yourusername/delhi-construction-tracker
+    plan: free
+    region: frankfurt
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && gunicorn app:app
+    envVars:
+      - key: GEE_PRIVATE_KEY
+        sync: false
+      - key: GEE_CLIENT_EMAIL
+        sync: false
+      - key: GEE_PROJECT_ID
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.9.0
