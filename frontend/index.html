@@ -3,35 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delhi NCR Construction Tracking Dashboard</title>
+    <title>Delhi NCR Construction Tracking Dashboard | Praan AI</title>
     <script src="https://unpkg.com/osmtogeojson@3.0.0-beta.4/osmtogeojson.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
 
         :root {
             --sidebar-w: 340px;
-            --bg: #0d1117;
-            --surface: #161b22;
-            --surface2: #1c2330;
-            --border: #30363d;
-            --border-soft: #21262d;
-            --text: #e6edf3;
-            --text-muted: #7d8590;
-            --text-dim: #484f58;
-            --accent: #2f81f7;
-            --accent-glow: rgba(47,129,247,0.18);
-            --green: #3fb950;
-            --red: #f85149;
-            --yellow: #d29922;
-            --bldg: #f0527a;
-            --road: #58a6ff;
-            --land: #ffa657;
-            --local: #a371f7;
-            --heat: #ff6b00;
-            --heat-bg: rgba(255,107,0,0.12);
-            --change: #3fb950;
-            --change-bg: rgba(63,185,80,0.10);
-            --local-bg: rgba(163,113,247,0.12);
+            --bg: #0a1a1a;
+            --surface: #0e2a2a;
+            --surface2: #1a3a3a;
+            --border: #2a4a4a;
+            --border-soft: #1e3a3a;
+            --text: #e6f7f0;
+            --text-muted: #8bb5a8;
+            --text-dim: #4a6a5e;
+            --accent: #2ecc71;
+            --accent-glow: rgba(46, 204, 113, 0.18);
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --yellow: #f1c40f;
+            --bldg: #3498db;
+            --road: #f39c12;
+            --land: #9b59b6;
+            --local: #1abc9c;
+            --heat: #e67e22;
+            --heat-bg: rgba(230, 126, 34, 0.12);
+            --change: #2ecc71;
+            --change-bg: rgba(46, 204, 113, 0.10);
+            --local-bg: rgba(26, 188, 156, 0.12);
             --radius: 8px;
             --radius-lg: 12px;
         }
@@ -56,7 +56,7 @@
         .sidebar-header {
             padding: 18px 20px 16px;
             border-bottom: 1px solid var(--border);
-            background: linear-gradient(160deg, #161b22 0%, #0d1117 100%);
+            background: linear-gradient(160deg, #0e2a2a 0%, #0a1a1a 100%);
             flex-shrink: 0;
         }
 
@@ -64,7 +64,7 @@
 
         .header-icon {
             width: 34px; height: 34px;
-            background: linear-gradient(135deg, var(--accent), #79c0ff);
+            background: linear-gradient(135deg, var(--accent), #27ae60);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1rem; flex-shrink: 0;
@@ -127,21 +127,21 @@
             transition: all 0.2s ease; letter-spacing: 0.1px;
         }
         .btn + .btn { margin-top: 8px; }
-        .btn-primary { background: var(--accent); color: #fff; }
-        .btn-primary:hover { background: #388bfd; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(47,129,247,0.35); }
+        .btn-primary { background: var(--accent); color: #0a1a1a; }
+        .btn-primary:hover { background: #27ae60; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(46, 204, 113, 0.35); }
         .btn-dark { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-        .btn-dark:hover { background: #2d333b; border-color: var(--text-muted); }
-        .btn-danger { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); animation: pulse-red 1.8s infinite; }
-        .btn-purple { background: rgba(163,113,247,0.15); color: var(--local); border: 1px solid rgba(163,113,247,0.3); }
-        .btn-purple:hover { background: rgba(163,113,247,0.25); }
-        .btn-heat { background: var(--heat-bg); color: var(--heat); border: 1px solid rgba(255,107,0,0.3); }
-        .btn-heat:hover { background: rgba(255,107,0,0.22); }
-        .btn-change { background: var(--change-bg); color: var(--change); border: 1px solid rgba(63,185,80,0.3); }
-        .btn-change:hover { background: rgba(63,185,80,0.18); }
-        .btn-change.active { background: rgba(63,185,80,0.25); border-color: var(--change); box-shadow: 0 0 0 2px rgba(63,185,80,0.2); }
-        .btn-heat.active   { background: rgba(255,107,0,0.25);  border-color: var(--heat); box-shadow: 0 0 0 2px rgba(255,107,0,0.2); }
+        .btn-dark:hover { background: #2a4a4a; border-color: var(--text-muted); }
+        .btn-danger { background: rgba(231, 76, 60, 0.15); color: var(--red); border: 1px solid rgba(231, 76, 60, 0.3); animation: pulse-red 1.8s infinite; }
+        .btn-purple { background: var(--local-bg); color: var(--local); border: 1px solid rgba(26, 188, 156, 0.3); }
+        .btn-purple:hover { background: rgba(26, 188, 156, 0.25); }
+        .btn-heat { background: var(--heat-bg); color: var(--heat); border: 1px solid rgba(230, 126, 34, 0.3); }
+        .btn-heat:hover { background: rgba(230, 126, 34, 0.22); }
+        .btn-change { background: var(--change-bg); color: var(--change); border: 1px solid rgba(46, 204, 113, 0.3); }
+        .btn-change:hover { background: rgba(46, 204, 113, 0.18); }
+        .btn-change.active { background: rgba(46, 204, 113, 0.25); border-color: var(--change); box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2); }
+        .btn-heat.active   { background: rgba(230, 126, 34, 0.25);  border-color: var(--heat); box-shadow: 0 0 0 2px rgba(230, 126, 34, 0.2); }
 
-        @keyframes pulse-red { 0%,100% { box-shadow: 0 0 0 0 rgba(248,81,73,0.3); } 50% { box-shadow: 0 0 0 5px rgba(248,81,73,0); } }
+        @keyframes pulse-red { 0%,100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.3); } 50% { box-shadow: 0 0 0 5px rgba(231, 76, 60, 0); } }
 
         /* Date range inputs */
         .date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
@@ -194,8 +194,8 @@
             padding: 14px 12px; text-align: center; cursor: pointer;
             transition: all 0.2s ease; background: var(--surface2); position: relative;
         }
-        .upload-area:hover { border-color: var(--local); background: rgba(163,113,247,0.06); }
-        .upload-area.has-file { border-color: var(--local); border-style: solid; background: rgba(163,113,247,0.08); }
+        .upload-area:hover { border-color: var(--local); background: rgba(26, 188, 156, 0.06); }
+        .upload-area.has-file { border-color: var(--local); border-style: solid; background: rgba(26, 188, 156, 0.08); }
         .upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
         .upload-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
         .upload-text { font-size: 0.78rem; color: var(--text-muted); }
@@ -225,19 +225,19 @@
         /* Sites list */
         #sites-section { display: none; }
         .sites-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-        .sites-count-badge { font-size: 0.7rem; font-family: 'DM Mono', monospace; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(47,129,247,0.3); padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+        .sites-count-badge { font-size: 0.7rem; font-family: 'DM Mono', monospace; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(46, 204, 113, 0.3); padding: 2px 8px; border-radius: 20px; font-weight: 600; }
 
         .sites-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
         .tab-btn { flex: 1; padding: 5px 8px; background: var(--surface2); border: 1px solid var(--border-soft); border-radius: 6px; font-size: 0.68rem; font-weight: 700; font-family: 'Syne', sans-serif; color: var(--text-muted); cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px; }
-        .tab-btn.active { background: var(--accent-glow); border-color: rgba(47,129,247,0.4); color: var(--accent); }
-        .tab-btn.active.local { background: rgba(163,113,247,0.12); border-color: rgba(163,113,247,0.4); color: var(--local); }
+        .tab-btn.active { background: var(--accent-glow); border-color: rgba(46, 204, 113, 0.4); color: var(--accent); }
+        .tab-btn.active.local { background: rgba(26, 188, 156, 0.12); border-color: rgba(26, 188, 156, 0.4); color: var(--local); }
 
         #sites-list { display: flex; flex-direction: column; gap: 4px; }
         .site-card { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: var(--surface2); border: 1px solid var(--border-soft); border-radius: var(--radius); cursor: pointer; transition: all 0.18s ease; position: relative; overflow: hidden; }
         .site-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; background: var(--card-accent, var(--text-dim)); transition: width 0.2s; }
-        .site-card:hover { border-color: var(--border); background: #1f2937; transform: translateX(2px); }
+        .site-card:hover { border-color: var(--border); background: #2a4a4a; transform: translateX(2px); }
         .site-card:hover::before { width: 4px; }
-        .site-card.active { border-color: var(--card-accent, var(--accent)); background: rgba(47,129,247,0.06); box-shadow: 0 0 0 1px var(--card-accent, var(--accent)) inset; }
+        .site-card.active { border-color: var(--card-accent, var(--accent)); background: rgba(46, 204, 113, 0.06); box-shadow: 0 0 0 1px var(--card-accent, var(--accent)) inset; }
         .site-card-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
         .site-card-body { flex: 1; min-width: 0; }
         .site-card-name { font-size: 0.8rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
@@ -254,14 +254,14 @@
         #sv-panel { width: 100%; height: 0; flex-shrink: 0; overflow: hidden; transition: height 0.38s cubic-bezier(0.4,0,0.2,1); position: relative; border-top: 2px solid var(--border); }
         #sv-panel.open { height: 42%; }
         #street-view { width: 100%; height: 100%; }
-        .sv-bar { position: absolute; top: 0; left: 0; right: 0; height: 36px; background: rgba(13,17,23,0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; z-index: 10; border-bottom: 1px solid var(--border); }
+        .sv-bar { position: absolute; top: 0; left: 0; right: 0; height: 36px; background: rgba(10, 26, 26, 0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; z-index: 10; border-bottom: 1px solid var(--border); }
         .sv-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; }
         .sv-hint { font-size: 0.7rem; color: var(--text-dim); font-family: 'DM Mono', monospace; }
-        .sv-close { background: rgba(248,81,73,0.15); border: 1px solid rgba(248,81,73,0.3); color: var(--red); border-radius: 5px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif; transition: background 0.2s; }
-        .sv-close:hover { background: rgba(248,81,73,0.3); }
+        .sv-close { background: rgba(231, 76, 60, 0.15); border: 1px solid rgba(231, 76, 60, 0.3); color: var(--red); border-radius: 5px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif; transition: background 0.2s; }
+        .sv-close:hover { background: rgba(231, 76, 60, 0.3); }
 
         /* Tooltip */
-        #hover-tooltip { position: fixed; background: rgba(13,17,23,0.96); color: var(--text); padding: 12px 15px; border-radius: var(--radius-lg); font-size: 0.8rem; font-family: 'Syne', sans-serif; pointer-events: none; z-index: 9999; display: none; max-width: 260px; border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,0.6); line-height: 1.55; }
+        #hover-tooltip { position: fixed; background: rgba(10, 26, 26, 0.96); color: var(--text); padding: 12px 15px; border-radius: var(--radius-lg); font-size: 0.8rem; font-family: 'Syne', sans-serif; pointer-events: none; z-index: 9999; display: none; max-width: 260px; border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,0.6); line-height: 1.55; }
         .tt-title { font-weight: 700; font-size: 0.87rem; color: var(--text); margin-bottom: 7px; padding-bottom: 6px; border-bottom: 1px solid var(--border-soft); }
         .tt-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; margin-bottom: 7px; }
         .tt-row { display: flex; gap: 8px; margin-top: 3px; font-size: 0.77rem; }
@@ -274,7 +274,7 @@
         .iw-row { display: flex; gap: 8px; margin-top: 4px; font-size: 0.82rem; }
         .iw-key { font-weight: 600; color: #5f6b7a; min-width: 80px; flex-shrink: 0; }
         .iw-val { color: #1a1f2e; }
-        .iw-src { font-size: 0.7rem; background: #f3e8ff; color: #7c3aed; padding: 2px 8px; border-radius: 20px; font-weight: 700; display: inline-block; margin-bottom: 8px; }
+        .iw-src { font-size: 0.7rem; background: rgba(26, 188, 156, 0.2); color: var(--local); padding: 2px 8px; border-radius: 20px; font-weight: 700; display: inline-block; margin-bottom: 8px; }
 
         .spin { display: inline-block; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -294,8 +294,8 @@
         <div class="header-top">
             <div class="header-icon">🏗️</div>
             <div>
-                <div class="header-title">Delhi NCR Tracker</div>
-                <div class="header-sub">Live Construction Mapping</div>
+                <div class="header-title">Praan AI Tracker</div>
+                <div class="header-sub">Delhi NCR Construction Intelligence</div>
             </div>
         </div>
     </div>
@@ -333,7 +333,7 @@
         </div>
 
         <!-- ═══════════════════════════════════════════
-             CHANGE DETECTION SECTION  (NEW)
+             CHANGE DETECTION SECTION
         ═══════════════════════════════════════════ -->
         <div class="section">
             <div class="sec-toggle" onclick="toggleSection('change-body', 'change-arrow')">
@@ -427,7 +427,7 @@
         </div>
 
         <!-- ═══════════════════════════════════
-             TRUE-COLOUR SENTINEL-2  (existing)
+             TRUE-COLOUR SENTINEL-2
         ═══════════════════════════════════ -->
         <div class="section">
             <div class="sec-toggle" onclick="toggleSection('s2-body','s2-arrow')">
@@ -471,7 +471,7 @@
                     <input type="file" id="geojson-file" accept=".geojson,.json" onchange="loadGeoJSONFile(this)">
                     <span class="upload-icon">📂</span>
                     <div class="upload-text">Drop or click to upload
-                        <strong id="upload-filename">delhi_ncr_construction_sites.geojson</strong>
+                        <strong id="upload-filename">construction_sites.geojson</strong>
                     </div>
                 </div>
                 <div class="upload-hint">Supports .geojson / .json files</div>
@@ -481,9 +481,9 @@
                     <button class="btn btn-purple btn-url" onclick="loadGeoJSONFromURL()">Load</button>
                 </div>
                 <button class="btn btn-dark" style="margin-top:8px" onclick="loadDefaultGeoJSON()">
-                    🗺️ Load delhi_ncr_construction_sites.geojson
+                    🗺️ Load Sample Construction Sites
                 </button>
-                <button class="btn btn-dark" style="margin-top:6px;color:var(--red);border-color:rgba(248,81,73,0.3)" onclick="clearLocalLayer()">
+                <button class="btn btn-dark" style="margin-top:6px;color:var(--red);border-color:rgba(231,76,60,0.3)" onclick="clearLocalLayer()">
                     🗑️ Clear GeoJSON Layer
                 </button>
             </div>
@@ -563,7 +563,10 @@
 <script>
 'use strict';
 
-const API = 'http://127.0.0.1:5000';  // ← your Flask backend
+// Update this to your Render backend URL when deployed
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://127.0.0.1:5000' 
+    : 'https://your-backend-name.onrender.com';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let map, infoWindow, panorama;
@@ -576,10 +579,10 @@ let localLayer     = null;
 let blinkInterval  = null;
 let currentTab     = 'all';
 
-// Satellite layer handles (stored so we can remove them)
-let s2Layer        = null;   // true-colour Sentinel-2
-let changeLayer    = null;   // change detection score
-let heatmapLayer   = null;   // smoothed heatmap
+// Satellite layer handles
+let s2Layer        = null;
+let changeLayer    = null;
+let heatmapLayer   = null;
 
 const tooltip = document.getElementById('hover-tooltip');
 
@@ -620,7 +623,7 @@ function initMap() {
 
     google.maps.event.addListenerOnce(map, 'idle', () => {
         fetchData();
-        loadS2Layer();   // auto-load true-colour on start
+        loadS2Layer();
     });
 
     let timer;
@@ -655,7 +658,6 @@ function removeLayer(layerRef) {
     return null;
 }
 
-// ── True-colour Sentinel-2 ─────────────────────────────────────────────────
 async function loadS2Layer() {
     setStatus('loading', '<span class="spin">⟳</span> Loading Sentinel-2 true colour…');
     try {
@@ -682,7 +684,6 @@ function toggleS2Layer() {
     s2Layer.setOpacity(document.getElementById('toggle-s2').checked ? 0.8 : 0);
 }
 
-// ── Change detection score layer ──────────────────────────────────────────
 async function loadChangeLayer() {
     const btn = document.getElementById('btn-change');
     btn.classList.add('active');
@@ -701,7 +702,6 @@ async function loadChangeLayer() {
         const data = await res.json();
         if (data.status !== 'success') throw new Error(data.message);
 
-        // Remove previous layers of the same type before adding new
         heatmapLayer = removeLayer(heatmapLayer);
         changeLayer  = removeLayer(changeLayer);
 
@@ -712,7 +712,6 @@ async function loadChangeLayer() {
         document.getElementById('legend-heatmap').style.display = 'none';
         document.getElementById('btn-heatmap').classList.remove('active');
 
-        // Also fetch area stats for the current map bounds
         fetchChangeStats();
         setStatus('ok', `✅ Change detection: ${data.baseline.start} → ${data.recent.end}`);
 
@@ -722,7 +721,6 @@ async function loadChangeLayer() {
     }
 }
 
-// ── Heatmap layer ──────────────────────────────────────────────────────────
 async function loadHeatmapLayer() {
     const btn = document.getElementById('btn-heatmap');
     btn.classList.add('active');
@@ -760,7 +758,6 @@ async function loadHeatmapLayer() {
     }
 }
 
-// ── Stats fetch ────────────────────────────────────────────────────────────
 async function fetchChangeStats() {
     try {
         const bounds = map.getBounds();
@@ -785,7 +782,6 @@ async function fetchChangeStats() {
     } catch (_) { /* non-critical */ }
 }
 
-// ── Clear satellite layers ─────────────────────────────────────────────────
 function clearSatelliteLayers() {
     s2Layer      = removeLayer(s2Layer);
     changeLayer  = removeLayer(changeLayer);
@@ -800,7 +796,7 @@ function clearSatelliteLayers() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  GEOJSON LOADERS  (unchanged from previous version)
+//  GEOJSON LOADERS
 // ══════════════════════════════════════════════════════════════════════════
 
 function loadGeoJSONFile(input) {
@@ -829,7 +825,7 @@ async function loadGeoJSONFromURL() {
 }
 
 async function loadDefaultGeoJSON() {
-    setStatus('loading', '<span class="spin">⟳</span> Loading delhi_ncr_construction_sites.geojson…');
+    setStatus('loading', '<span class="spin">⟳</span> Loading sample construction sites…');
     try {
         const res = await fetch('delhi_ncr_construction_sites.geojson');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -846,12 +842,12 @@ function ingestLocalGeoJSON(geojson, sourceName) {
         localFeatures.push({
             id      : `local-${idx}`,
             feature,
-            name    : props.name||props.Name||props.project||`GeoJSON Site #${idx+1}`,
-            category: props.type||props.category||props.construction||'Construction Site',
+            name    : props.name || props.Name || props.project || `Construction Site #${idx+1}`,
+            category: props.type || props.category || props.construction || 'Construction Site',
             props,
             source  : sourceName,
-            color   : '#a371f7',
-            bg      : 'rgba(163,113,247,0.12)',
+            color   : '#1abc9c',
+            bg      : 'rgba(26, 188, 156, 0.12)',
             icon    : '📍',
             isLocal : true
         });
@@ -869,7 +865,7 @@ function ingestLocalGeoJSON(geojson, sourceName) {
 function applyLocalLayerStyle() {
     const visible = document.getElementById('filter-local').checked;
     localLayer.setStyle(() => ({
-        fillColor   : '#a371f7', strokeColor: '#7c3aed', strokeWeight: 2.5,
+        fillColor   : '#1abc9c', strokeColor: '#16a085', strokeWeight: 2.5,
         fillOpacity : visible ? 0.55 : 0, strokeOpacity: visible ? 1 : 0, zIndex: 5
     }));
 }
@@ -879,7 +875,7 @@ function clearLocalLayer() {
     localFeatures = [];
     document.getElementById('stat-local').textContent  = 0;
     document.getElementById('count-local').textContent = 0;
-    document.getElementById('upload-filename').textContent = 'delhi_ncr_construction_sites.geojson';
+    document.getElementById('upload-filename').textContent = 'construction_sites.geojson';
     document.getElementById('upload-area').classList.remove('has-file');
     buildSitesList();
     setStatus('idle', 'GeoJSON layer cleared.');
@@ -891,7 +887,7 @@ function clearLocalLayer() {
 
 function setupLocalLayerInteractions() {
     localLayer.addListener('mouseover', e => {
-        localLayer.overrideStyle(e.feature, { strokeWeight: 4, fillOpacity: 0.85, strokeColor: '#e6edf3' });
+        localLayer.overrideStyle(e.feature, { strokeWeight: 4, fillOpacity: 0.85, strokeColor: '#e6f7f0' });
         showLocalTooltip(e.feature);
         tooltip.style.display = 'block';
     });
@@ -909,10 +905,10 @@ function showLocalTooltip(feature) {
     const p = {};
     feature.forEachProperty((v, k) => { p[k] = v; });
     tooltip.innerHTML = `
-        <div class="tt-title">${p.name||p.Name||p.project||'GeoJSON Site'}</div>
-        <span class="tt-badge" style="background:rgba(163,113,247,0.18);color:#a371f7;border:1px solid rgba(163,113,247,0.35)">📍 GeoJSON</span>
-        <div class="tt-row"><span class="tt-key">Type</span><span class="tt-val">${p.type||p.category||'—'}</span></div>
-        <div class="tt-row"><span class="tt-key">Area</span><span class="tt-val">${p.area||p.Area||'—'}</span></div>
+        <div class="tt-title">${p.name || p.Name || p.project || 'GeoJSON Site'}</div>
+        <span class="tt-badge" style="background:rgba(26,188,156,0.18);color:#1abc9c;border:1px solid rgba(26,188,156,0.35)">📍 GeoJSON</span>
+        <div class="tt-row"><span class="tt-key">Type</span><span class="tt-val">${p.type || p.category || '—'}</span></div>
+        <div class="tt-row"><span class="tt-key">Area</span><span class="tt-val">${p.area || p.Area || '—'}</span></div>
     `;
 }
 
@@ -1013,9 +1009,9 @@ function fetchUserLocation() {
 
 // ── Feature helpers ────────────────────────────────────────────────────────
 function getOSMType(feature) {
-    if (feature.getProperty('building')) return {key:'bldg',label:'Building', color:'#f0527a',bg:'rgba(240,82,122,0.12)',icon:'🏢'};
-    if (feature.getProperty('highway'))  return {key:'road',label:'Roadway',  color:'#58a6ff',bg:'rgba(88,166,255,0.12)',icon:'🛣️'};
-    if (feature.getProperty('landuse'))  return {key:'land',label:'Land Dev', color:'#ffa657',bg:'rgba(255,166,87,0.12)', icon:'🏗️'};
+    if (feature.getProperty('building')) return {key:'bldg',label:'Building', color:'#3498db',bg:'rgba(52,152,219,0.12)',icon:'🏢'};
+    if (feature.getProperty('highway'))  return {key:'road',label:'Roadway',  color:'#f39c12',bg:'rgba(243,156,18,0.12)',icon:'🛣️'};
+    if (feature.getProperty('landuse'))  return {key:'land',label:'Land Dev', color:'#9b59b6',bg:'rgba(155,89,182,0.12)', icon:'🏗️'};
     return null;
 }
 
@@ -1061,8 +1057,8 @@ function buildSitesList() {
         const label = site.isLocal ? site.name : (prop(site.feature,'name')!=='—'?prop(site.feature,'name'):`${site.label} Site #${idx+1}`);
         const sub   = site.isLocal ? site.category : (prop(site.feature,'construction','building:use','highway')!=='—'?prop(site.feature,'construction','building:use','highway'):site.label);
         const srcBadge = site.isLocal
-            ? `<span class="site-badge" style="background:rgba(163,113,247,0.18);color:#a371f7">GeoJSON</span>`
-            : `<span class="site-badge" style="background:rgba(47,129,247,0.12);color:#58a6ff">OSM</span>`;
+            ? `<span class="site-badge" style="background:rgba(26,188,156,0.18);color:#1abc9c">GeoJSON</span>`
+            : `<span class="site-badge" style="background:rgba(46,204,113,0.12);color:#2ecc71">OSM</span>`;
         const card = document.createElement('div');
         card.className = 'site-card';
         card.id        = `site-card-${site.id}`;
@@ -1114,9 +1110,9 @@ function focusLocalSite(site) {
     let bState=false; stopBlink();
     blinkInterval=setInterval(()=>{
         bState=!bState;
-        localLayer.overrideStyle(site.feature,{fillColor:bState?'#fff':'#a371f7',strokeColor:'#a371f7',strokeWeight:bState?5:2.5,fillOpacity:bState?.95:.6});
+        localLayer.overrideStyle(site.feature,{fillColor:bState?'#fff':'#1abc9c',strokeColor:'#16a085',strokeWeight:bState?5:2.5,fillOpacity:bState?.95:.6});
     },350);
-    setTimeout(()=>{stopBlink();localLayer.overrideStyle(site.feature,{fillColor:'#a371f7',strokeColor:'#7c3aed',strokeWeight:2.5,fillOpacity:.55});},3500);
+    setTimeout(()=>{stopBlink();localLayer.overrideStyle(site.feature,{fillColor:'#1abc9c',strokeColor:'#16a085',strokeWeight:2.5,fillOpacity:.55});},3500);
 }
 
 // ── Blink ──────────────────────────────────────────────────────────────────
@@ -1137,7 +1133,7 @@ function stopBlink(){
 // ── OSM interactions ───────────────────────────────────────────────────────
 function setupInteractions(){
     map.data.addListener('mouseover',e=>{
-        map.data.overrideStyle(e.feature,{strokeWeight:4,fillOpacity:.9,strokeColor:'#e6edf3'});
+        map.data.overrideStyle(e.feature,{strokeWeight:4,fillOpacity:.9,strokeColor:'#e6f7f0'});
         showOSMTooltip(e.feature); tooltip.style.display='block';
     });
     map.data.addListener('mousemove',e=>positionTooltip(e.domEvent));
@@ -1196,8 +1192,8 @@ function buildLocalInfoContent(site){
         .map(([k,v])=>`<div class="iw-row"><span class="iw-key">${k}</span><span class="iw-val">${v}</span></div>`).join('');
     return `<div class="iw-wrap">
         <div class="iw-title">${site.name}</div>
-        <span class="iw-src" style="background:#f3e8ff;color:#7c3aed">📍 ${site.source}</span>
-        <span class="iw-badge" style="background:#a371f7">GeoJSON Site</span>
+        <span class="iw-src" style="background:rgba(26,188,156,0.2);color:#1abc9c">📍 ${site.source}</span>
+        <span class="iw-badge" style="background:#1abc9c">GeoJSON Site</span>
         <div class="iw-row"><span class="iw-key">Category</span><span class="iw-val">${site.category}</span></div>
         ${rows}
     </div>`;
@@ -1246,7 +1242,7 @@ function closeStreetView(){
 // ── Status ─────────────────────────────────────────────────────────────────
 function setStatus(state,html){
     const dot=document.getElementById('status-dot'),text=document.getElementById('status-text');
-    const colors={ok:'#3fb950',error:'#f85149',loading:'#2f81f7',waiting:'#d29922',idle:'#7d8590'};
+    const colors={ok:'#2ecc71',error:'#e74c3c',loading:'#2ecc71',waiting:'#f1c40f',idle:'#8bb5a8'};
     dot.style.background=colors[state]||colors.idle; text.innerHTML=html;
 }
 </script>
